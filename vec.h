@@ -23,16 +23,18 @@ struct _vec_header {
 #define vec_capacity(v) \
     (_vec_header(v)->capacity)
 
-#define vec_reserve(v, n) { \
+#define vec_reserve(v, n) \
+do { \
     struct _vec_header* h = _vec_header(v); \
     if (h->capacity < n) { \
         h->capacity = n; \
         h = realloc(h, sizeof(struct _vec_header) + sizeof(typeof(*v)) * h->capacity); \
         v = (typeof(*v) *)(((uint8_t*)h) + sizeof(struct _vec_header)); \
     } \
-}
+} while(0)
 
-#define vec_push(v, val) { \
+#define vec_push(v, val) \
+do { \
     struct _vec_header* h = _vec_header(v); \
     if (h->len == h->capacity) { \
         h->capacity *= 2; h->capacity++; \
@@ -40,12 +42,13 @@ struct _vec_header {
         v = (typeof(*v) *)(((uint8_t*)h) + sizeof(struct _vec_header)); \
     } \
     v[h->len++] = val; \
-}
+} while(0)
 
-#define vec_pop(v) { \
+#define vec_pop(v) \
+do { \
     assert(_vec_header(v)->len > 0); \
     _vec_header(v)->len--; \
-}
+} while(0)
 
 #define vec_foreach(elem, v) \
     for (typeof(*v) elem, *_elem = v; \
