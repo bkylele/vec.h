@@ -15,6 +15,10 @@ struct vec_header {
 #define vec_new() \
     (calloc(sizeof(struct vec_header), 1) + sizeof(struct vec_header))
 
+#define vec_clone(v) \
+    (memcpy(malloc(sizeof(struct vec_header) + sizeof(typeof(*v))*vec_capacity(v)), vec_header(v), \
+            sizeof(struct vec_header) + sizeof(typeof(*v))*vec_capacity(v)) + sizeof(struct vec_header))
+
 #define vec_free(v) \
     free(vec_header(v))
 
