@@ -24,29 +24,32 @@ struct vec_header {
 #define vec_capacity(v) \
     (vec_header(v)->capacity)
 
-#define vec_reserve(v, n) { \
-    struct vec_header* h = vec_header(v); \
-    if (h->capacity < n) { \
-        h->capacity = n; \
-        h = realloc(h, sizeof(struct vec_header) + sizeof(typeof(*v)) * h->capacity); \
-        v = (typeof(*v) *)(((uint8_t*)h) + sizeof(struct vec_header)); \
-    } \
-}
+#define vec_reserve(v, n) \
+    do{ \
+        struct vec_header* h = vec_header(v); \
+        if (h->capacity < n) { \
+            h->capacity = n; \
+            h = realloc(h, sizeof(struct vec_header) + sizeof(typeof(*v)) * h->capacity); \
+            v = (typeof(*v) *)(((uint8_t*)h) + sizeof(struct vec_header)); \
+        } \
+    }while(0)
 
-#define vec_push(v, val) { \
-    struct vec_header* h = vec_header(v); \
-    if (h->len == h->capacity) { \
-        h->capacity *= 2; h->capacity++; \
-        h = realloc(h, sizeof(struct vec_header) + sizeof(typeof(*v)) * h->capacity); \
-        v = (typeof(*v) *)(((uint8_t*)h) + sizeof(struct vec_header)); \
-    } \
-    v[h->len++] = val; \
-}
+#define vec_push(v, val) \
+    do{ \
+        struct vec_header* h = vec_header(v); \
+        if (h->len == h->capacity) { \
+            h->capacity *= 2; h->capacity++; \
+            h = realloc(h, sizeof(struct vec_header) + sizeof(typeof(*v)) * h->capacity); \
+            v = (typeof(*v) *)(((uint8_t*)h) + sizeof(struct vec_header)); \
+        } \
+        v[h->len++] = val; \
+    }while(0)
 
-#define vec_pop(v) { \
-    assert(vec_header(v)->len > 0); \
-    vec_header(v)->len--; \
-}
+#define vec_pop(v) \
+    do{ \
+        assert(vec_header(v)->len > 0); \
+        vec_header(v)->len--; \
+    }while(0)
 
 #define vec_from(X, ...) \
     memcpy(memcpy(malloc(sizeof(struct vec_header) \
@@ -66,14 +69,12 @@ struct vec_header {
             *_elem = elem, ++_elem) \
             __VA_ARGS__
 
-#define vec_retain(v, elem, pred) \
-{ \
-    size_t i = 0; \
-    for (typeof(*v) elem, *_elem = v; \
-            _elem != &v[vec_len(v)] \
-            && ((elem = *_elem),true); \
-            ++_elem) { \
-        if (pred) { v[i++] = *_elem; } \
-    } \
-    vec_len(v) = i; \
-}
+#define vec_retain(v, elem, pred, ...) \
+    for (typeof(*v) elem, *_elem = v, *_v = v; \
+            _elem != &v[vec_len(v) + _v - v] \
+            && ((elem = *_elem),true) \
+            && (((pred) ? --vec_len(v), *(_v++) = *_elem, 0 : 0 ),true) \
+            ; \
+            *(_elem++) = elem) \
+            __VA_ARGS__
+
